@@ -1,49 +1,52 @@
-import {createContext, useContext, useEffect, useState} from "react";
-import {GoogleAuthProvider, signInWithRedirect, onAuthStateChanged, signOut} from "firebase/auth";
-import {auth} from "../firebase.jsx";
+import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth'
+import { auth } from '../firebase.jsx'
 
 const AuthContext = createContext()
 
-export const AuthProvider = ({children}) => {
+export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-	const [currentUser, setCurrentUser] = useState(null)
-	const [loading, setLoading] = useState(true)
+  // Signin with google
 
-	// Signin with google
+  const signinWithGoogle = () => {
+    const provider = new GoogleAuthProvider()
 
-	const signinWithGoogle = () => {
-		const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+  }
 
-		signInWithRedirect(auth, provider)
-	}
+  // Signout
 
-	// Signout
+  const logout = () => signOut(auth)
 
-	const logout = () => signOut(auth);
+  const value = {
+    currentUser,
+    setCurrentUser,
+    signinWithGoogle,
+    logout
+  }
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user)
+      setLoading(false)
+    })
+    return unsubscribe
+  }, [])
 
-	const value = {
-		currentUser,
-		setCurrentUser,
-		signinWithGoogle,
-		logout
-	}
-
-	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, (user) => {
-			setCurrentUser(user)
-			setLoading(false)
-		})
-		return unsubscribe
-	}, [])
-
-	return (
-		<AuthContext.Provider value={value}>
-			{!loading && children}
-		</AuthContext.Provider>
-	)
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  )
 }
 
 export const UserAuth = () => {
-	return useContext(AuthContext)
+  return useContext(AuthContext)
 }
